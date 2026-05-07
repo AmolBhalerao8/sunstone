@@ -1,364 +1,364 @@
 {
-    "name":  "ZOL AI Receptionist",
-    "model":  {
-                  "provider":  "openai",
-                  "model":  "gpt-4o",
-                  "temperature":  0.3,
-                  "systemPrompt":  "You are an AI voice receptionist and service advisor for ZOL, a mechanic shop. Your job is to answer calls 24/7, answer shop questions, collect service details, send an estimate by SMS to the caller\u0027s phone number, check appointment availability, book a slot only after explicit customer approval, and make sure the ZOL team is notified after booking.\n\nTODAY\u0027S DATE\nToday is {{now}}. All appointments must be in the future. When a caller says next Tuesday or this Friday, calculate the correct date in the current year. Always pass dates as full ISO 8601 strings with the correct timezone.\n\nSHOP INFO\nName: ZOL\nCalls: answered 24/7\nAppointment hours: daily 8:00 AM-6:00 PM\nLocation: 1146 North Cedar Street, Beside Safeway\nPublic phone/SMS: (878) 673-0209\nAppointment calendar account: ezaz@scopiclegal.com\nServices: diagnostics, oil changes, brakes, batteries, tires, alignments, A/C service, inspections, engine repair, transmission service, and general repair.\nImportant: Estimates are not final invoices. Final pricing depends on inspection, parts availability, taxes, shop supplies, and customer approval.\n\nCRITICAL RULES\n- Be fast, calm, and helpful. Ask only what you still need.\n- Do not ask for email. ZOL sends quotes and follow-ups by SMS.\n- Use the phone number from caller ID when available, but confirm it before texting. If caller ID is unavailable or they want a different number, ask for the best SMS number.\n- Ask for permission before sending a text: \u0027Can I text the estimate to this number?\u0027\n- Never promise a final price. Say estimate or starting estimate.\n- Never diagnose with certainty over the phone. Use phrases like \u0027based on what you described\u0027 and \u0027the technician will verify it during inspection.\u0027\n- Never tell a customer an unsafe vehicle is okay to drive. For brakes failing, steering issues, overheating, smoke, severe fluid leaks, warning lights with poor drivability, or accident damage, advise them not to drive and to tow it in.\n- Do not promise an appointment is confirmed until createEvent succeeds. After booking, the backend sends the customer follow-up SMS and notifies the team when SHOP_TEAM_NOTIFY_NUMBER is configured.\n- Do not mention tools, APIs, webhooks, backend systems, or Twilio to the caller.\n\nREQUIRED FIELDS BEFORE QUOTE SMS\n1) Full name\n2) Confirmed SMS phone number\n3) SMS consent\n4) Vehicle make and model; collect year and mileage if the caller knows them\n5) Service type: diagnostic, oil_change, brake_service, battery, tires, alignment, ac_service, engine_repair, transmission, inspection, other\n6) Issue description in the caller\u0027s own words\n7) Urgency: today, this_week, flexible, emergency\n8) Parts preference: standard, oem, budget, or not_sure\n9) Preferred appointment/drop-off window if they want scheduling\n10) Notes: symptoms, warning lights, noises, leaks, recent work, towing needs, special instructions\n\nCONVERSATION FLOW\n1) Greet: \u0027Thanks for calling ZOL. Are you looking for a repair estimate, an appointment, or general shop information?\u0027\n2) If they ask a general question, answer clearly using the shop info. Then ask if they want help with an estimate or appointment.\n3) Collect vehicle and service details. For vague issues, ask targeted follow-ups: when it started, warning lights, noises, leaks, whether it is safe to drive, and recent repairs.\n4) Confirm the phone number for SMS. If caller ID is available, say: \u0027I can text the estimate to the number you\u0027re calling from. Is that the best number?\u0027 Otherwise ask for the number and repeat it in 3-3-4 groups.\n5) Ask consent to text the estimate.\n6) If scheduling is requested, collect a preferred day/time window and call checkAvailability. Read 2-3 available times in plain language.\n7) Call send_quote_sms with lead, vehicle, service, preferredWindow if known, and availableSlots if availability was checked.\n8) Say: \u0027I just texted the estimate. It is a starting estimate and the technician will confirm the final price after inspection.\u0027\n9) If the customer picks a time, repeat the slot and ask: \u0027Do you want me to book that now?\u0027\n10) Call createEvent only after consent. If successful, call send_followup_sms with the bookedSlot, vehicle, and service so the customer receives confirmation and the team can be notified.\n11) Close with next steps: bring keys, note warning lights/symptoms, and call if plans change.\n\nTOOL ERROR HANDLING\nsend_quote_sms errorCode missing_sms_consent: ask permission to text the estimate, then retry.\nsend_quote_sms errorCode invalid_phone: ask for the best SMS number, repeat it, then retry.\nsend_quote_sms errorCode sms_failed: apologize, confirm the phone number, and try once more.\nsend_followup_sms errors: confirm the best SMS number and retry once.\n\nSERVICE GUIDANCE\n- Oil change: ask conventional/synthetic if known, vehicle year/make/model, mileage, and whether any warning lights are on.\n- Brakes: ask about squealing, grinding, pedal feel, vibration, and whether braking feels unsafe. If unsafe, recommend towing.\n- Battery: ask if the vehicle starts, if lights are dim, battery age if known, and whether jump-start was needed.\n- Tires/alignment: ask tire size if known, uneven wear, pulling, vibration, and whether they need new tires or service.\n- Check engine/diagnostic: ask whether the light is solid or flashing. If flashing or running rough, recommend not driving.\n- A/C: ask whether air is warm, weak airflow, odd smell, or noises.\n- Engine/transmission: ask symptoms and advise inspection before final estimate.\n\nVOICE FORMATTING\nPhone numbers: repeat as 3-3-4 digits. Prices: say \u0027about\u0027 or \u0027starting around\u0027. Appointment times: include day, date, and time.",
-                  "tools":  [
-                                {
-                                    "type":  "google.calendar.availability.check",
-                                    "name":  "checkAvailability",
-                                    "description":  "Check the ZOL appointment calendar connected to ezaz@scopiclegal.com for available mechanic-shop appointment or drop-off slots. Use this only after collecting the caller\u0027s preferred date/time window and enough vehicle/service details to know the appointment type. Appointment availability should be within ZOL\u0027s appointment hours, daily 8:00 AM-6:00 PM. Pass startDateTime and endDateTime as full future ISO 8601 strings, and use timezone America/Los_Angeles. Read 2-3 available options back to the caller in plain language. Do not promise or confirm a booking from this tool alone."
-                                },
-                                {
-                                    "type":  "google.calendar.event.create",
-                                    "name":  "createEvent",
-                                    "description":  "Book a confirmed ZOL mechanic-shop appointment on the Google Calendar connected to ezaz@scopiclegal.com. Call this only after the caller explicitly chooses a specific available slot and says yes to booking it. Set the event summary to \u0027ZOL - [customer full name] - [vehicle year/make/model] - [service type]\u0027. In the event description include customer phone number, vehicle year/make/model/mileage if known, requested service, issue description, urgency, notes, SMS consent, and any quote/estimate already sent. Use timezone America/Los_Angeles. After this succeeds, immediately call send_followup_sms with bookedSlot, vehicle, and service so the customer receives confirmation and the ZOL team is notified.",
-                                    "parameters":  {
-                                                       "calendarId":  "primary",
-                                                       "timeZone":  "America/Los_Angeles"
-                                                   }
-                                },
-                                {
-                                    "type":  "function",
-                                    "function":  {
-                                                     "name":  "send_quote_sms",
-                                                     "description":  "Calculate a ZOL mechanic-shop estimate and send it by SMS to the caller\u0027s confirmed phone number. Call this after collecting required lead, vehicle, and service details. Include availableSlots if checkAvailability was used, and bookedSlot if sending a quote after booking.",
-                                                     "parameters":  {
-                                                                        "type":  "object",
-                                                                        "required":  [
-                                                                                         "lead",
-                                                                                         "vehicle",
-                                                                                         "service"
-                                                                                     ],
-                                                                        "properties":  {
-                                                                                           "lead":  {
-                                                                                                        "type":  "object",
-                                                                                                        "required":  [
-                                                                                                                         "fullName",
-                                                                                                                         "phone",
-                                                                                                                         "smsConsent"
-                                                                                                                     ],
-                                                                                                        "properties":  {
-                                                                                                                           "fullName":  {
-                                                                                                                                            "type":  "string"
-                                                                                                                                        },
-                                                                                                                           "phone":  {
-                                                                                                                                         "type":  "string"
-                                                                                                                                     },
-                                                                                                                           "smsConsent":  {
-                                                                                                                                              "type":  "boolean"
-                                                                                                                                          }
-                                                                                                                       }
-                                                                                                    },
-                                                                                           "vehicle":  {
-                                                                                                           "type":  "object",
-                                                                                                           "required":  [
-                                                                                                                            "make",
-                                                                                                                            "model"
-                                                                                                                        ],
-                                                                                                           "properties":  {
-                                                                                                                              "year":  {
-                                                                                                                                           "type":  "integer"
-                                                                                                                                       },
-                                                                                                                              "make":  {
-                                                                                                                                           "type":  "string"
-                                                                                                                                       },
-                                                                                                                              "model":  {
-                                                                                                                                            "type":  "string"
-                                                                                                                                        },
-                                                                                                                              "mileage":  {
-                                                                                                                                              "type":  "integer"
-                                                                                                                                          },
-                                                                                                                              "vin":  {
-                                                                                                                                          "type":  "string"
-                                                                                                                                      },
-                                                                                                                              "licensePlate":  {
-                                                                                                                                                   "type":  "string"
-                                                                                                                                               }
-                                                                                                                          }
-                                                                                                       },
-                                                                                           "service":  {
-                                                                                                           "type":  "object",
-                                                                                                           "required":  [
-                                                                                                                            "serviceType",
-                                                                                                                            "issueDescription"
-                                                                                                                        ],
-                                                                                                           "properties":  {
-                                                                                                                              "serviceType":  {
-                                                                                                                                                  "type":  "string",
-                                                                                                                                                  "enum":  [
-                                                                                                                                                               "diagnostic",
-                                                                                                                                                               "oil_change",
-                                                                                                                                                               "brake_service",
-                                                                                                                                                               "battery",
-                                                                                                                                                               "tires",
-                                                                                                                                                               "alignment",
-                                                                                                                                                               "ac_service",
-                                                                                                                                                               "engine_repair",
-                                                                                                                                                               "transmission",
-                                                                                                                                                               "inspection",
-                                                                                                                                                               "other"
-                                                                                                                                                           ]
-                                                                                                                                              },
-                                                                                                                              "issueDescription":  {
-                                                                                                                                                       "type":  "string"
-                                                                                                                                                   },
-                                                                                                                              "urgency":  {
-                                                                                                                                              "type":  "string",
-                                                                                                                                              "enum":  [
-                                                                                                                                                           "today",
-                                                                                                                                                           "this_week",
-                                                                                                                                                           "flexible",
-                                                                                                                                                           "emergency"
-                                                                                                                                                       ]
-                                                                                                                                          },
-                                                                                                                              "partsPreference":  {
-                                                                                                                                                      "type":  "string",
-                                                                                                                                                      "enum":  [
-                                                                                                                                                                   "standard",
-                                                                                                                                                                   "oem",
-                                                                                                                                                                   "budget",
-                                                                                                                                                                   "not_sure"
-                                                                                                                                                               ]
-                                                                                                                                                  },
-                                                                                                                              "addons":  {
-                                                                                                                                             "type":  "array",
-                                                                                                                                             "items":  {
-                                                                                                                                                           "type":  "string",
-                                                                                                                                                           "enum":  [
-                                                                                                                                                                        "diagnostic_scan",
-                                                                                                                                                                        "multi_point_inspection",
-                                                                                                                                                                        "tire_rotation",
-                                                                                                                                                                        "fluid_top_off",
-                                                                                                                                                                        "road_test"
-                                                                                                                                                                    ]
-                                                                                                                                                       }
-                                                                                                                                         },
-                                                                                                                              "notes":  {
-                                                                                                                                            "type":  "string"
-                                                                                                                                        },
-                                                                                                                              "customerCanDropOff":  {
-                                                                                                                                                         "type":  "boolean"
-                                                                                                                                                     }
-                                                                                                                          }
-                                                                                                       },
-                                                                                           "preferredWindow":  {
-                                                                                                                   "type":  "object",
-                                                                                                                   "properties":  {
-                                                                                                                                      "startISO":  {
-                                                                                                                                                       "type":  "string"
-                                                                                                                                                   },
-                                                                                                                                      "endISO":  {
-                                                                                                                                                     "type":  "string"
-                                                                                                                                                 },
-                                                                                                                                      "timezone":  {
-                                                                                                                                                       "type":  "string"
-                                                                                                                                                   }
-                                                                                                                                  }
-                                                                                                               },
-                                                                                           "availableSlots":  {
-                                                                                                                  "type":  "array",
-                                                                                                                  "items":  {
-                                                                                                                                "type":  "object",
-                                                                                                                                "properties":  {
-                                                                                                                                                   "startISO":  {
-                                                                                                                                                                    "type":  "string"
-                                                                                                                                                                },
-                                                                                                                                                   "endISO":  {
-                                                                                                                                                                  "type":  "string"
-                                                                                                                                                              },
-                                                                                                                                                   "timezone":  {
-                                                                                                                                                                    "type":  "string"
-                                                                                                                                                                }
-                                                                                                                                               }
-                                                                                                                            }
-                                                                                                              },
-                                                                                           "bookedSlot":  {
-                                                                                                              "type":  "object",
-                                                                                                              "properties":  {
-                                                                                                                                 "startISO":  {
-                                                                                                                                                  "type":  "string"
-                                                                                                                                              },
-                                                                                                                                 "endISO":  {
-                                                                                                                                                "type":  "string"
-                                                                                                                                            },
-                                                                                                                                 "timezone":  {
-                                                                                                                                                  "type":  "string"
-                                                                                                                                              }
-                                                                                                                             }
-                                                                                                          }
-                                                                                       }
-                                                                    }
-                                                 },
-                                    "server":  {
-                                                   "url":  "{{BASE_URL}}/tools/send_quote_sms"
-                                               }
-                                },
-                                {
-                                    "type":  "function",
-                                    "function":  {
-                                                     "name":  "send_followup_sms",
-                                                     "description":  "Send a follow-up SMS after an appointment is booked or when the caller asks for a text reminder. Include bookedSlot after createEvent succeeds.",
-                                                     "parameters":  {
-                                                                        "type":  "object",
-                                                                        "required":  [
-                                                                                         "lead"
-                                                                                     ],
-                                                                        "properties":  {
-                                                                                           "lead":  {
-                                                                                                        "type":  "object",
-                                                                                                        "required":  [
-                                                                                                                         "fullName",
-                                                                                                                         "phone",
-                                                                                                                         "smsConsent"
-                                                                                                                     ],
-                                                                                                        "properties":  {
-                                                                                                                           "fullName":  {
-                                                                                                                                            "type":  "string"
-                                                                                                                                        },
-                                                                                                                           "phone":  {
-                                                                                                                                         "type":  "string"
-                                                                                                                                     },
-                                                                                                                           "smsConsent":  {
-                                                                                                                                              "type":  "boolean"
-                                                                                                                                          }
-                                                                                                                       }
-                                                                                                    },
-                                                                                           "messageType":  {
-                                                                                                               "type":  "string"
-                                                                                                           },
-                                                                                           "customMessage":  {
-                                                                                                                 "type":  "string"
-                                                                                                             },
-                                                                                           "bookedSlot":  {
-                                                                                                              "type":  "object",
-                                                                                                              "properties":  {
-                                                                                                                                 "startISO":  {
-                                                                                                                                                  "type":  "string"
-                                                                                                                                              },
-                                                                                                                                 "endISO":  {
-                                                                                                                                                "type":  "string"
-                                                                                                                                            },
-                                                                                                                                 "timezone":  {
-                                                                                                                                                  "type":  "string"
-                                                                                                                                              }
-                                                                                                                             }
-                                                                                                          },
-                                                                                           "vehicle":  {
-                                                                                                           "type":  "object",
-                                                                                                           "properties":  {
-                                                                                                                              "year":  {
-                                                                                                                                           "type":  "integer"
-                                                                                                                                       },
-                                                                                                                              "make":  {
-                                                                                                                                           "type":  "string"
-                                                                                                                                       },
-                                                                                                                              "model":  {
-                                                                                                                                            "type":  "string"
-                                                                                                                                        },
-                                                                                                                              "mileage":  {
-                                                                                                                                              "type":  "integer"
-                                                                                                                                          },
-                                                                                                                              "vin":  {
-                                                                                                                                          "type":  "string"
-                                                                                                                                      },
-                                                                                                                              "licensePlate":  {
-                                                                                                                                                   "type":  "string"
-                                                                                                                                               }
-                                                                                                                          }
-                                                                                                       },
-                                                                                           "service":  {
-                                                                                                           "type":  "object",
-                                                                                                           "properties":  {
-                                                                                                                              "serviceType":  {
-                                                                                                                                                  "type":  "string",
-                                                                                                                                                  "enum":  [
-                                                                                                                                                               "diagnostic",
-                                                                                                                                                               "oil_change",
-                                                                                                                                                               "brake_service",
-                                                                                                                                                               "battery",
-                                                                                                                                                               "tires",
-                                                                                                                                                               "alignment",
-                                                                                                                                                               "ac_service",
-                                                                                                                                                               "engine_repair",
-                                                                                                                                                               "transmission",
-                                                                                                                                                               "inspection",
-                                                                                                                                                               "other"
-                                                                                                                                                           ]
-                                                                                                                                              },
-                                                                                                                              "issueDescription":  {
-                                                                                                                                                       "type":  "string"
-                                                                                                                                                   },
-                                                                                                                              "urgency":  {
-                                                                                                                                              "type":  "string",
-                                                                                                                                              "enum":  [
-                                                                                                                                                           "today",
-                                                                                                                                                           "this_week",
-                                                                                                                                                           "flexible",
-                                                                                                                                                           "emergency"
-                                                                                                                                                       ]
-                                                                                                                                          },
-                                                                                                                              "partsPreference":  {
-                                                                                                                                                      "type":  "string",
-                                                                                                                                                      "enum":  [
-                                                                                                                                                                   "standard",
-                                                                                                                                                                   "oem",
-                                                                                                                                                                   "budget",
-                                                                                                                                                                   "not_sure"
-                                                                                                                                                               ]
-                                                                                                                                                  },
-                                                                                                                              "addons":  {
-                                                                                                                                             "type":  "array",
-                                                                                                                                             "items":  {
-                                                                                                                                                           "type":  "string",
-                                                                                                                                                           "enum":  [
-                                                                                                                                                                        "diagnostic_scan",
-                                                                                                                                                                        "multi_point_inspection",
-                                                                                                                                                                        "tire_rotation",
-                                                                                                                                                                        "fluid_top_off",
-                                                                                                                                                                        "road_test"
-                                                                                                                                                                    ]
-                                                                                                                                                       }
-                                                                                                                                         },
-                                                                                                                              "notes":  {
-                                                                                                                                            "type":  "string"
-                                                                                                                                        },
-                                                                                                                              "customerCanDropOff":  {
-                                                                                                                                                         "type":  "boolean"
-                                                                                                                                                     }
-                                                                                                                          }
-                                                                                                       }
-                                                                                       }
-                                                                    }
-                                                 },
-                                    "server":  {
-                                                   "url":  "{{BASE_URL}}/tools/send_followup_sms"
-                                               }
-                                }
-                            ]
+  "name": "ZOL AI Receptionist",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.3,
+    "systemPrompt": "You are an AI voice receptionist and service advisor for ZOL, a mechanic shop. Your job is to answer calls 24/7, answer shop questions, collect service details, send an estimate by SMS to the caller's phone number, check appointment availability, book a slot only after explicit customer approval, and make sure the ZOL team is notified after booking.\n\nTODAY'S DATE\nToday is {{now}}. All appointments must be in the future. When a caller says next Tuesday or this Friday, calculate the correct date in the current year. Always pass dates as full ISO 8601 strings with the correct timezone.\n\nSHOP INFO\nName: ZOL\nCalls: answered 24/7\nAppointment hours: daily 8:00 AM-6:00 PM\nLocation: 1146 North Cedar Street, Beside Safeway\nPublic phone/SMS: (878) 673-0209\nAppointment calendar account: ezaz@scopiclegal.com\nServices: diagnostics, oil changes, brakes, batteries, tires, alignments, A/C service, inspections, engine repair, transmission service, and general repair.\nImportant: Estimates are not final invoices. Final pricing depends on inspection, parts availability, taxes, shop supplies, and customer approval.\n\nCRITICAL RULES\n- Be fast, calm, and helpful. Ask only what you still need.\n- Do not ask for email. ZOL sends quotes and follow-ups by SMS.\n- Use the phone number from caller ID when available, but confirm it before texting. If caller ID is unavailable or they want a different number, ask for the best SMS number.\n- Ask for permission before sending a text: 'Can I text the estimate to this number?'\n- Never promise a final price. Say estimate or starting estimate.\n- Never diagnose with certainty over the phone. Use phrases like 'based on what you described' and 'the technician will verify it during inspection.'\n- Never tell a customer an unsafe vehicle is okay to drive. For brakes failing, steering issues, overheating, smoke, severe fluid leaks, warning lights with poor drivability, or accident damage, advise them not to drive and to tow it in.\n- Do not promise an appointment is confirmed until createEvent succeeds. After booking, the backend sends the customer follow-up SMS and notifies the team when SHOP_TEAM_NOTIFY_NUMBER is configured.\n- To prevent double-booking, never call createEvent from an old availability result. When the caller chooses a time, repeat the chosen slot, ask for consent, then call checkAvailability again for that exact slot only. Call createEvent only if that exact slot is still returned as available. If it is not available, apologize and offer another available time.\n- Do not mention tools, APIs, webhooks, backend systems, or Twilio to the caller.\n\nREQUIRED FIELDS BEFORE QUOTE SMS\n1) Full name\n2) Confirmed SMS phone number\n3) SMS consent\n4) Vehicle make and model; collect year and mileage if the caller knows them\n5) Service type: diagnostic, oil_change, brake_service, battery, tires, alignment, ac_service, engine_repair, transmission, inspection, other\n6) Issue description in the caller's own words\n7) Urgency: today, this_week, flexible, emergency\n8) Parts preference: standard, oem, budget, or not_sure\n9) Preferred appointment/drop-off window if they want scheduling\n10) Notes: symptoms, warning lights, noises, leaks, recent work, towing needs, special instructions\n\nCONVERSATION FLOW\n1) Greet: 'Thanks for calling ZOL. Are you looking for a repair estimate, an appointment, or general shop information?'\n2) If they ask a general question, answer clearly using the shop info. Then ask if they want help with an estimate or appointment.\n3) Collect vehicle and service details. For vague issues, ask targeted follow-ups: when it started, warning lights, noises, leaks, whether it is safe to drive, and recent repairs.\n4) Confirm the phone number for SMS. If caller ID is available, say: 'I can text the estimate to the number you're calling from. Is that the best number?' Otherwise ask for the number and repeat it in 3-3-4 groups.\n5) Ask consent to text the estimate.\n6) If scheduling is requested, collect a preferred day/time window and call checkAvailability. Read 2-3 available times in plain language.\n7) Call send_quote_sms with lead, vehicle, service, preferredWindow if known, and availableSlots if availability was checked.\n8) Say: 'I just texted the estimate. It is a starting estimate and the technician will confirm the final price after inspection.'\n9) If the customer picks a time, repeat the slot and ask: 'Do you want me to book that now?'\n10) After the customer says yes, call checkAvailability again using the exact selected start and end time. If that exact slot is still available, call createEvent. If it is not available, say the slot was just taken and offer another available time.\n11) If createEvent succeeds, call send_followup_sms with the bookedSlot, vehicle, and service so the customer receives confirmation and the team can be notified.\n11) Close with next steps: bring keys, note warning lights/symptoms, and call if plans change.\n\nTOOL ERROR HANDLING\nsend_quote_sms errorCode missing_sms_consent: ask permission to text the estimate, then retry.\nsend_quote_sms errorCode invalid_phone: ask for the best SMS number, repeat it, then retry.\nsend_quote_sms errorCode sms_failed: apologize, confirm the phone number, and try once more.\nsend_followup_sms errors: confirm the best SMS number and retry once.\n\nSERVICE GUIDANCE\n- Oil change: ask conventional/synthetic if known, vehicle year/make/model, mileage, and whether any warning lights are on.\n- Brakes: ask about squealing, grinding, pedal feel, vibration, and whether braking feels unsafe. If unsafe, recommend towing.\n- Battery: ask if the vehicle starts, if lights are dim, battery age if known, and whether jump-start was needed.\n- Tires/alignment: ask tire size if known, uneven wear, pulling, vibration, and whether they need new tires or service.\n- Check engine/diagnostic: ask whether the light is solid or flashing. If flashing or running rough, recommend not driving.\n- A/C: ask whether air is warm, weak airflow, odd smell, or noises.\n- Engine/transmission: ask symptoms and advise inspection before final estimate.\n\nVOICE FORMATTING\nPhone numbers: repeat as 3-3-4 digits. Prices: say 'about' or 'starting around'. Appointment times: include day, date, and time.",
+    "tools": [
+      {
+        "type": "google.calendar.availability.check",
+        "name": "checkAvailability",
+        "description": "Check the ZOL appointment calendar connected to ezaz@scopiclegal.com for available mechanic-shop appointment or drop-off slots. Use this after collecting the caller's preferred date/time window and enough vehicle/service details to know the appointment type. Appointment availability should be within ZOL's appointment hours, daily 8:00 AM-6:00 PM. Pass startDateTime and endDateTime as full future ISO 8601 strings, and use timezone America/Los_Angeles. Read 2-3 available options back to the caller in plain language. Before booking, call this tool again for the exact selected start and end time; only book if that exact slot is still available. Do not promise or confirm a booking from this tool alone."
+      },
+      {
+        "type": "google.calendar.event.create",
+        "name": "createEvent",
+        "description": "Book a confirmed ZOL mechanic-shop appointment on the Google Calendar connected to ezaz@scopiclegal.com. Call this only after the caller explicitly chooses a specific slot, says yes to booking it, and checkAvailability has just confirmed that exact selected slot is still available. Never call this from an old availability result or for a slot that was not returned available by the most recent exact-slot availability check. Set the event summary to 'ZOL - [customer full name] - [vehicle year/make/model] - [service type]'. In the event description include customer phone number, vehicle year/make/model/mileage if known, requested service, issue description, urgency, notes, SMS consent, and any quote/estimate already sent. Use timezone America/Los_Angeles. After this succeeds, immediately call send_followup_sms with bookedSlot, vehicle, and service so the customer receives confirmation and the ZOL team is notified.",
+        "parameters": {
+          "calendarId": "primary",
+          "timeZone": "America/Los_Angeles"
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "send_quote_sms",
+          "description": "Calculate a ZOL mechanic-shop estimate and send it by SMS to the caller's confirmed phone number. Call this after collecting required lead, vehicle, and service details. Include availableSlots if checkAvailability was used, and bookedSlot if sending a quote after booking.",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "lead",
+              "vehicle",
+              "service"
+            ],
+            "properties": {
+              "lead": {
+                "type": "object",
+                "required": [
+                  "fullName",
+                  "phone",
+                  "smsConsent"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "smsConsent": {
+                    "type": "boolean"
+                  }
+                }
               },
-    "voice":  {
-                  "provider":  "11labs",
-                  "voiceId":  "21m00Tcm4TlvDq8ikWAM",
-                  "stability":  0.5,
-                  "similarityBoost":  0.75,
-                  "style":  0.25,
-                  "useSpeakerBoost":  true
+              "vehicle": {
+                "type": "object",
+                "required": [
+                  "make",
+                  "model"
+                ],
+                "properties": {
+                  "year": {
+                    "type": "integer"
+                  },
+                  "make": {
+                    "type": "string"
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "mileage": {
+                    "type": "integer"
+                  },
+                  "vin": {
+                    "type": "string"
+                  },
+                  "licensePlate": {
+                    "type": "string"
+                  }
+                }
               },
-    "firstMessage":  "Thanks for calling ZOL. Are you looking for a repair estimate, an appointment, or general shop information?",
-    "endCallMessage":  "Thanks for calling ZOL. Have a great day.",
-    "endCallPhrases":  [
-                           "goodbye",
-                           "bye bye",
-                           "that\u0027s all",
-                           "thanks bye",
-                           "talk to you later"
-                       ],
-    "maxDurationSeconds":  900,
-    "backgroundSound":  "off",
-    "backchannelingEnabled":  true,
-    "responseDelaySeconds":  0.4,
-    "llmRequestDelaySeconds":  0.1
+              "service": {
+                "type": "object",
+                "required": [
+                  "serviceType",
+                  "issueDescription"
+                ],
+                "properties": {
+                  "serviceType": {
+                    "type": "string",
+                    "enum": [
+                      "diagnostic",
+                      "oil_change",
+                      "brake_service",
+                      "battery",
+                      "tires",
+                      "alignment",
+                      "ac_service",
+                      "engine_repair",
+                      "transmission",
+                      "inspection",
+                      "other"
+                    ]
+                  },
+                  "issueDescription": {
+                    "type": "string"
+                  },
+                  "urgency": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "this_week",
+                      "flexible",
+                      "emergency"
+                    ]
+                  },
+                  "partsPreference": {
+                    "type": "string",
+                    "enum": [
+                      "standard",
+                      "oem",
+                      "budget",
+                      "not_sure"
+                    ]
+                  },
+                  "addons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "diagnostic_scan",
+                        "multi_point_inspection",
+                        "tire_rotation",
+                        "fluid_top_off",
+                        "road_test"
+                      ]
+                    }
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "customerCanDropOff": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "preferredWindow": {
+                "type": "object",
+                "properties": {
+                  "startISO": {
+                    "type": "string"
+                  },
+                  "endISO": {
+                    "type": "string"
+                  },
+                  "timezone": {
+                    "type": "string"
+                  }
+                }
+              },
+              "availableSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "startISO": {
+                      "type": "string"
+                    },
+                    "endISO": {
+                      "type": "string"
+                    },
+                    "timezone": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "bookedSlot": {
+                "type": "object",
+                "properties": {
+                  "startISO": {
+                    "type": "string"
+                  },
+                  "endISO": {
+                    "type": "string"
+                  },
+                  "timezone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "server": {
+          "url": "{{BASE_URL}}/tools/send_quote_sms"
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "send_followup_sms",
+          "description": "Send a follow-up SMS after an appointment is booked or when the caller asks for a text reminder. Include bookedSlot after createEvent succeeds.",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "lead"
+            ],
+            "properties": {
+              "lead": {
+                "type": "object",
+                "required": [
+                  "fullName",
+                  "phone",
+                  "smsConsent"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "smsConsent": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "messageType": {
+                "type": "string"
+              },
+              "customMessage": {
+                "type": "string"
+              },
+              "bookedSlot": {
+                "type": "object",
+                "properties": {
+                  "startISO": {
+                    "type": "string"
+                  },
+                  "endISO": {
+                    "type": "string"
+                  },
+                  "timezone": {
+                    "type": "string"
+                  }
+                }
+              },
+              "vehicle": {
+                "type": "object",
+                "properties": {
+                  "year": {
+                    "type": "integer"
+                  },
+                  "make": {
+                    "type": "string"
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "mileage": {
+                    "type": "integer"
+                  },
+                  "vin": {
+                    "type": "string"
+                  },
+                  "licensePlate": {
+                    "type": "string"
+                  }
+                }
+              },
+              "service": {
+                "type": "object",
+                "properties": {
+                  "serviceType": {
+                    "type": "string",
+                    "enum": [
+                      "diagnostic",
+                      "oil_change",
+                      "brake_service",
+                      "battery",
+                      "tires",
+                      "alignment",
+                      "ac_service",
+                      "engine_repair",
+                      "transmission",
+                      "inspection",
+                      "other"
+                    ]
+                  },
+                  "issueDescription": {
+                    "type": "string"
+                  },
+                  "urgency": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "this_week",
+                      "flexible",
+                      "emergency"
+                    ]
+                  },
+                  "partsPreference": {
+                    "type": "string",
+                    "enum": [
+                      "standard",
+                      "oem",
+                      "budget",
+                      "not_sure"
+                    ]
+                  },
+                  "addons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "diagnostic_scan",
+                        "multi_point_inspection",
+                        "tire_rotation",
+                        "fluid_top_off",
+                        "road_test"
+                      ]
+                    }
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "customerCanDropOff": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "server": {
+          "url": "{{BASE_URL}}/tools/send_followup_sms"
+        }
+      }
+    ]
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM",
+    "stability": 0.5,
+    "similarityBoost": 0.75,
+    "style": 0.25,
+    "useSpeakerBoost": true
+  },
+  "firstMessage": "Thanks for calling ZOL. Are you looking for a repair estimate, an appointment, or general shop information?",
+  "endCallMessage": "Thanks for calling ZOL. Have a great day.",
+  "endCallPhrases": [
+    "goodbye",
+    "bye bye",
+    "that's all",
+    "thanks bye",
+    "talk to you later"
+  ],
+  "maxDurationSeconds": 900,
+  "backgroundSound": "off",
+  "backchannelingEnabled": true,
+  "responseDelaySeconds": 0.4,
+  "llmRequestDelaySeconds": 0.1
 }

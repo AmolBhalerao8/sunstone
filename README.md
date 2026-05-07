@@ -25,7 +25,7 @@ ZOL details currently configured:
 3. The assistant confirms the caller's phone number from caller ID, or asks for the best SMS number if needed.
 4. Vapi checks the shop calendar for available drop-off or inspection times.
 5. The backend calculates an estimate and sends the quote by SMS to the caller's phone number.
-6. If the customer chooses a time, Vapi books the appointment on Google Calendar.
+6. If the customer chooses a time, Vapi re-checks that exact slot and books it only if it is still available.
 7. The backend sends a follow-up SMS with the confirmed appointment details and can notify the ZOL team by SMS.
 
 ## Project Structure

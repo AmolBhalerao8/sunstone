@@ -68,14 +68,16 @@ Use these Google Calendar tool descriptions if Vapi asks you to enter them manua
 `checkAvailability`
 
 ```text
-Check the ZOL appointment calendar connected to ezaz@scopiclegal.com for available mechanic-shop appointment or drop-off slots. Use this only after collecting the caller's preferred date/time window and enough vehicle/service details to know the appointment type. Appointment availability should be within ZOL's appointment hours, daily 8:00 AM-6:00 PM. Pass startDateTime and endDateTime as full future ISO 8601 strings, and use timezone America/Los_Angeles. Read 2-3 available options back to the caller in plain language. Do not promise or confirm a booking from this tool alone.
+Check the ZOL appointment calendar connected to ezaz@scopiclegal.com for available mechanic-shop appointment or drop-off slots. Use this after collecting the caller's preferred date/time window and enough vehicle/service details to know the appointment type. Appointment availability should be within ZOL's appointment hours, daily 8:00 AM-6:00 PM. Pass startDateTime and endDateTime as full future ISO 8601 strings, and use timezone America/Los_Angeles. Read 2-3 available options back to the caller in plain language. Before booking, call this tool again for the exact selected start and end time; only book if that exact slot is still available. Do not promise or confirm a booking from this tool alone.
 ```
 
 `createEvent`
 
 ```text
-Book a confirmed ZOL mechanic-shop appointment on the Google Calendar connected to ezaz@scopiclegal.com. Call this only after the caller explicitly chooses a specific available slot and says yes to booking it. Set the event summary to "ZOL - [customer full name] - [vehicle year/make/model] - [service type]". In the event description include customer phone number, vehicle year/make/model/mileage if known, requested service, issue description, urgency, notes, SMS consent, and any quote/estimate already sent. Use timezone America/Los_Angeles. After this succeeds, immediately call send_followup_sms with bookedSlot, vehicle, and service so the customer receives confirmation and the ZOL team is notified.
+Book a confirmed ZOL mechanic-shop appointment on the Google Calendar connected to ezaz@scopiclegal.com. Call this only after the caller explicitly chooses a specific slot, says yes to booking it, and checkAvailability has just confirmed that exact selected slot is still available. Never call this from an old availability result or for a slot that was not returned available by the most recent exact-slot availability check. Set the event summary to "ZOL - [customer full name] - [vehicle year/make/model] - [service type]". In the event description include customer phone number, vehicle year/make/model/mileage if known, requested service, issue description, urgency, notes, SMS consent, and any quote/estimate already sent. Use timezone America/Los_Angeles. After this succeeds, immediately call send_followup_sms with bookedSlot, vehicle, and service so the customer receives confirmation and the ZOL team is notified.
 ```
+
+Important: Google Calendar can technically contain overlapping events. This assistant avoids double-booking by re-checking the exact chosen slot immediately before calling `createEvent`.
 
 ## 5. Attach A Phone Number
 
