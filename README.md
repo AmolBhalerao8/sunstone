@@ -16,6 +16,7 @@ ZOL details currently configured:
 - Calls: answered 24/7
 - Appointment hours: daily `8:00 AM-6:00 PM`
 - Calendar account to connect in Vapi: `ezaz@scopiclegal.com`
+- Team booking notification number: `+15307179645`
 
 ## How It Works
 

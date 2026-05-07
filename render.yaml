@@ -14,7 +14,7 @@ services:
       - key: TWILIO_FROM_NUMBER
         sync: false
       - key: SHOP_TEAM_NOTIFY_NUMBER
-        sync: false
+        value: "+15307179645"
       - key: SHOP_NAME
         value: ZOL
       - key: SHOP_PHONE
