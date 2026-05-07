@@ -6,7 +6,7 @@ These Terms and Conditions apply to SMS messages sent by ZOL.
 
 ## Program Description
 
-ZOL provides AI-powered voice and messaging support for mechanic shops and event booth visitors. SMS messages may include requested founder booking links, repair estimates, appointment confirmations, reminders, follow-up messages, and related service information.
+ZOL provides an AI voice demo and messaging assistant for event booth visitors and people who request follow-up information. SMS messages may include requested founder booking links, event/demo follow-up information, requested meeting links, and related information requested during a call.
 
 ## Consent To Receive Messages
 
@@ -14,7 +14,7 @@ By verbally agreeing during a phone call with ZOL's AI voice agent, you consent 
 
 ## Message Frequency
 
-Message frequency varies. You may receive messages when you request a booking link, request an estimate, schedule an appointment, receive appointment updates, or ask for follow-up information.
+Message frequency varies. You may receive messages when you request a founder booking link, request demo follow-up information, request a meeting link, or ask for related follow-up information.
 
 ## Message And Data Rates
 
@@ -45,5 +45,4 @@ ZOL may update these Terms and Conditions from time to time. Updates will be pos
 ## Contact
 
 ZOL  
-1146 North Cedar Street, Beside Safeway  
 Phone: (878) 673-0209
