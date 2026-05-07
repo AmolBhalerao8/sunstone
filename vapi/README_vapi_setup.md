@@ -5,7 +5,7 @@ This setup uses Vapi for phone calls, Vapi's native Google Calendar tools for ap
 ## 1. Configure Twilio
 
 1. Create or log in to a Twilio account.
-2. Buy or select a Twilio phone number that can send SMS.
+2. Select the ZOL Twilio SMS number: `(878) 673-0209`.
 3. Copy:
    - Account SID
    - Auth Token
@@ -15,8 +15,11 @@ This setup uses Vapi for phone calls, Vapi's native Google Calendar tools for ap
 ```env
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_FROM_NUMBER=+15305550100
+TWILIO_FROM_NUMBER=+18786730209
+SHOP_TEAM_NOTIFY_NUMBER=
 ```
+
+Find the Account SID/Auth Token in Twilio at **Console -> Account Dashboard -> Account Info**. The Account SID starts with `AC...`; click **Show** next to Auth Token to reveal it.
 
 ## 2. Run The Backend
 
@@ -43,7 +46,7 @@ Set `BASE_URL` in `.env` to the ngrok HTTPS URL, then restart the backend.
 
 1. Log in to [Vapi](https://vapi.ai).
 2. Go to **Integrations -> Tools Provider -> Google Calendar**.
-3. Connect the Google account that owns the ZOL appointment calendar.
+3. Connect `ezaz@scopiclegal.com`, which owns the ZOL appointment calendar.
 
 ## 4. Create The Assistant
 
@@ -76,6 +79,7 @@ The assistant should show four tools:
 - [ ] Calendar availability is read back clearly
 - [ ] `createEvent` creates a calendar event after customer consent
 - [ ] `send_followup_sms` sends appointment confirmation
+- [ ] If `SHOP_TEAM_NOTIFY_NUMBER` is set, the ZOL team receives a booking notification
 
 ## Pricing Adjustments
 

@@ -13,15 +13,17 @@ services:
         sync: false
       - key: TWILIO_FROM_NUMBER
         sync: false
+      - key: SHOP_TEAM_NOTIFY_NUMBER
+        sync: false
       - key: SHOP_NAME
         value: ZOL
       - key: SHOP_PHONE
-        value: "(530) 555-0199"
+        value: "(878) 673-0209"
       - key: SHOP_ADDRESS
-        value: "Chico, CA"
+        value: "1146 North Cedar Street, Beside Safeway"
       - key: SHOP_WEBSITE
-        value: www.zolauto.com
+        value: ""
       - key: SHOP_HOURS
-        value: "Monday-Friday 8:00 AM-6:00 PM, Saturday 9:00 AM-2:00 PM"
+        value: "Calls answered 24/7. Shop appointments available daily 8:00 AM-6:00 PM."
       - key: BASE_URL
         sync: false

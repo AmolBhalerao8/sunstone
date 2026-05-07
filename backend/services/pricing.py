@@ -11,25 +11,25 @@ from models.service_info import ADDON_LABELS, SERVICE_TYPE_LABELS, ServiceInfo, 
 
 
 BASE_RATES: dict[str, float] = {
-    "diagnostic": 129.00,
-    "oil_change": 79.00,
-    "brake_service": 249.00,
-    "battery": 189.00,
-    "tires": 120.00,
-    "alignment": 109.00,
-    "ac_service": 149.00,
-    "engine_repair": 399.00,
-    "transmission": 499.00,
-    "inspection": 99.00,
-    "other": 129.00,
+    "diagnostic": 149.00,
+    "oil_change": 95.00,
+    "brake_service": 425.00,
+    "battery": 245.00,
+    "tires": 720.00,
+    "alignment": 129.00,
+    "ac_service": 189.00,
+    "engine_repair": 650.00,
+    "transmission": 850.00,
+    "inspection": 129.00,
+    "other": 149.00,
 }
 
 ADDON_RATES: dict[str, float] = {
-    "diagnostic_scan": 69.00,
-    "multi_point_inspection": 49.00,
-    "tire_rotation": 35.00,
-    "fluid_top_off": 25.00,
-    "road_test": 40.00,
+    "diagnostic_scan": 89.00,
+    "multi_point_inspection": 69.00,
+    "tire_rotation": 45.00,
+    "fluid_top_off": 35.00,
+    "road_test": 55.00,
 }
 
 PARTS_MULTIPLIERS: dict[str, float] = {
@@ -39,8 +39,8 @@ PARTS_MULTIPLIERS: dict[str, float] = {
     "not_sure": 1.00,
 }
 
-HIGH_MILEAGE_SURCHARGE = 35.00
-OLDER_VEHICLE_SURCHARGE = 45.00
+HIGH_MILEAGE_SURCHARGE = 65.00
+OLDER_VEHICLE_SURCHARGE = 75.00
 
 
 def calculate_quote(service: ServiceInfo, vehicle: VehicleInfo) -> Quote:

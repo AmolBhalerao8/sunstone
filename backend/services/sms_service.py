@@ -18,10 +18,14 @@ from models.service_info import SERVICE_TYPE_LABELS, ServiceInfo, VehicleInfo
 logger = logging.getLogger(__name__)
 
 SHOP_NAME = os.getenv("SHOP_NAME", "ZOL")
-SHOP_PHONE = os.getenv("SHOP_PHONE", "(530) 555-0199")
-SHOP_ADDRESS = os.getenv("SHOP_ADDRESS", "Chico, CA")
-SHOP_WEBSITE = os.getenv("SHOP_WEBSITE", "www.zolauto.com")
-SHOP_HOURS = os.getenv("SHOP_HOURS", "Monday-Friday 8:00 AM-6:00 PM")
+SHOP_PHONE = os.getenv("SHOP_PHONE", "(878) 673-0209")
+SHOP_ADDRESS = os.getenv("SHOP_ADDRESS", "1146 North Cedar Street, Beside Safeway")
+SHOP_WEBSITE = os.getenv("SHOP_WEBSITE", "")
+SHOP_HOURS = os.getenv(
+    "SHOP_HOURS",
+    "Calls answered 24/7. Shop appointments available daily 8:00 AM-6:00 PM.",
+)
+SHOP_TEAM_NOTIFY_NUMBER = os.getenv("SHOP_TEAM_NOTIFY_NUMBER", "")
 
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
@@ -110,6 +114,25 @@ def build_followup_sms(
     return " ".join(lines)
 
 
+def build_team_booking_sms(
+    lead: Lead,
+    booked_slot: TimeSlot,
+    vehicle: VehicleInfo | None = None,
+    service: ServiceInfo | None = None,
+) -> str:
+    lines = [
+        f"ZOL booking: {lead.fullName}",
+        f"Customer: {lead.phone}",
+        f"Time: {_fmt_slot(booked_slot)}",
+    ]
+    if vehicle:
+        lines.append(f"Vehicle: {_vehicle_label(vehicle)}")
+    if service:
+        lines.append(f"Service: {SERVICE_TYPE_LABELS[service.serviceType]}")
+        lines.append(f"Issue: {service.issueDescription}")
+    return "\n".join(lines)
+
+
 def send_sms(to_number: str, body: str) -> str:
     missing = [key for key, value in {
         "TWILIO_ACCOUNT_SID": TWILIO_ACCOUNT_SID,
@@ -127,3 +150,22 @@ def send_sms(to_number: str, body: str) -> str:
     )
     logger.info("SMS sent to %s with sid=%s", to_number, message.sid)
     return message.sid
+
+
+def send_team_booking_notification(
+    lead: Lead,
+    booked_slot: TimeSlot,
+    vehicle: VehicleInfo | None = None,
+    service: ServiceInfo | None = None,
+) -> str | None:
+    if not SHOP_TEAM_NOTIFY_NUMBER:
+        logger.info("Team booking notification skipped because SHOP_TEAM_NOTIFY_NUMBER is not set.")
+        return None
+
+    body = build_team_booking_sms(
+        lead=lead,
+        booked_slot=booked_slot,
+        vehicle=vehicle,
+        service=service,
+    )
+    return send_sms(SHOP_TEAM_NOTIFY_NUMBER, body)

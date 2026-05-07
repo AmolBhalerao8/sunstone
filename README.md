@@ -9,6 +9,14 @@ Built with:
 - **FastAPI** for tool webhook endpoints
 - **Twilio SMS** for quote and follow-up text messages
 
+ZOL details currently configured:
+
+- Public phone/SMS: `(878) 673-0209`
+- Address: `1146 North Cedar Street, Beside Safeway`
+- Calls: answered 24/7
+- Appointment hours: daily `8:00 AM-6:00 PM`
+- Calendar account to connect in Vapi: `ezaz@scopiclegal.com`
+
 ## How It Works
 
 1. A customer calls the Vapi phone number.
@@ -17,7 +25,7 @@ Built with:
 4. Vapi checks the shop calendar for available drop-off or inspection times.
 5. The backend calculates an estimate and sends the quote by SMS to the caller's phone number.
 6. If the customer chooses a time, Vapi books the appointment on Google Calendar.
-7. The backend sends a follow-up SMS with the confirmed appointment details.
+7. The backend sends a follow-up SMS with the confirmed appointment details and can notify the ZOL team by SMS.
 
 ## Project Structure
 
@@ -79,7 +87,10 @@ Set `BASE_URL` in `.env` to the public HTTPS URL.
 | `SHOP_ADDRESS` | Shop address |
 | `SHOP_WEBSITE` | Shop website |
 | `SHOP_HOURS` | Business hours shown in texts and assistant answers |
+| `SHOP_TEAM_NOTIFY_NUMBER` | Optional team phone number for booking notifications |
 | `BASE_URL` | Public URL for Vapi webhooks |
+
+CleanAI used Render, so this app includes `render.yaml` and should be deployed the same way.
 
 ## API Endpoints
 

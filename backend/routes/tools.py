@@ -22,7 +22,12 @@ from models.tool_schemas import (
     VapiWebhookPayload,
 )
 from services.pricing import calculate_quote
-from services.sms_service import build_followup_sms, build_quote_sms, send_sms
+from services.sms_service import (
+    build_followup_sms,
+    build_quote_sms,
+    send_sms,
+    send_team_booking_notification,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +118,16 @@ async def send_quote_sms(request: Request) -> JSONResponse:
         booked_slot=args.bookedSlot,
     )
 
+    team_message_sid = None
     try:
         message_sid = send_sms(args.lead.phone, sms_body)
+        if args.bookedSlot:
+            team_message_sid = send_team_booking_notification(
+                lead=args.lead,
+                booked_slot=args.bookedSlot,
+                vehicle=args.vehicle,
+                service=args.service,
+            )
     except ValueError as exc:
         return _vapi_error(tool_call_id, "invalid_phone", str(exc))
     except RuntimeError as exc:
@@ -178,5 +191,6 @@ async def send_followup_sms(request: Request) -> JSONResponse:
         "ok": True,
         "sentTo": args.lead.phone,
         "messageSid": message_sid,
+        "teamMessageSid": team_message_sid,
     }
     return _direct_ok(result) if tool_call_id == "direct-test" else _vapi_ok(tool_call_id, result)
