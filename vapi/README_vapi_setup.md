@@ -56,6 +56,8 @@ Set `BASE_URL` in `.env` to the ngrok HTTPS URL, then restart the backend.
 4. Replace `{{BASE_URL}}` with your deployed backend URL.
 5. Save.
 
+For the Sunstone booth version, the paste-ready system prompt is also saved at `sunstone/vapi/sunstone_event_prompt.txt`.
+
 The assistant should show four tools:
 
 - `checkAvailability`
