@@ -144,6 +144,7 @@ async def send_quote_sms(request: Request) -> JSONResponse:
         "quoteCurrency": quote.currency,
         "sentTo": args.lead.phone,
         "messageSid": message_sid,
+        "teamMessageSid": team_message_sid,
         "bookedSlot": args.bookedSlot.model_dump() if args.bookedSlot else None,
     }
     return _direct_ok(result) if tool_call_id == "direct-test" else _vapi_ok(tool_call_id, result)
@@ -191,6 +192,5 @@ async def send_followup_sms(request: Request) -> JSONResponse:
         "ok": True,
         "sentTo": args.lead.phone,
         "messageSid": message_sid,
-        "teamMessageSid": team_message_sid,
     }
     return _direct_ok(result) if tool_call_id == "direct-test" else _vapi_ok(tool_call_id, result)

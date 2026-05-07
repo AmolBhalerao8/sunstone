@@ -10,6 +10,7 @@ from datetime import datetime
 
 import pytz
 from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 from models.lead import Lead
 from models.quote import Quote, TimeSlot
@@ -17,19 +18,19 @@ from models.service_info import SERVICE_TYPE_LABELS, ServiceInfo, VehicleInfo
 
 logger = logging.getLogger(__name__)
 
-SHOP_NAME = os.getenv("SHOP_NAME", "ZOL")
-SHOP_PHONE = os.getenv("SHOP_PHONE", "(878) 673-0209")
-SHOP_ADDRESS = os.getenv("SHOP_ADDRESS", "1146 North Cedar Street, Beside Safeway")
-SHOP_WEBSITE = os.getenv("SHOP_WEBSITE", "")
+SHOP_NAME = os.getenv("SHOP_NAME", "ZOL").strip()
+SHOP_PHONE = os.getenv("SHOP_PHONE", "(878) 673-0209").strip()
+SHOP_ADDRESS = os.getenv("SHOP_ADDRESS", "1146 North Cedar Street, Beside Safeway").strip()
+SHOP_WEBSITE = os.getenv("SHOP_WEBSITE", "").strip()
 SHOP_HOURS = os.getenv(
     "SHOP_HOURS",
     "Calls answered 24/7. Shop appointments available daily 8:00 AM-6:00 PM.",
-)
-SHOP_TEAM_NOTIFY_NUMBER = os.getenv("SHOP_TEAM_NOTIFY_NUMBER", "")
+).strip()
+SHOP_TEAM_NOTIFY_NUMBER = os.getenv("SHOP_TEAM_NOTIFY_NUMBER", "").strip()
 
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "").strip()
 
 
 def _digits(value: str) -> str:
@@ -143,11 +144,15 @@ def send_sms(to_number: str, body: str) -> str:
         raise RuntimeError(f"Missing Twilio credentials: {', '.join(missing)}.")
 
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    message = client.messages.create(
-        body=body,
-        from_=TWILIO_FROM_NUMBER,
-        to=_format_e164(to_number),
-    )
+    try:
+        message = client.messages.create(
+            body=body,
+            from_=TWILIO_FROM_NUMBER,
+            to=_format_e164(to_number),
+        )
+    except TwilioRestException as exc:
+        logger.error("Twilio SMS failed: status=%s code=%s msg=%s", exc.status, exc.code, exc.msg)
+        raise RuntimeError(f"Twilio SMS failed with code {exc.code}.") from exc
     logger.info("SMS sent to %s with sid=%s", to_number, message.sid)
     return message.sid
 
