@@ -93,6 +93,11 @@ Set `BASE_URL` in `.env` to the public HTTPS URL.
 
 CleanAI used Render, so this app includes `render.yaml` and should be deployed the same way.
 
+## Compliance Pages
+
+- [Privacy Policy](privacy-policy.md)
+- [SMS Terms and Conditions](terms-and-conditions.md)
+
 ## API Endpoints
 
 | Method | Path | Description |
