@@ -1,4 +1,4 @@
-# ZOL AI Voice Receptionist
+# ZOL - An AI Employee For Mechanic Shop 
 
 AI phone receptionist and service quoting assistant for ZOL, a mechanic shop.
 
